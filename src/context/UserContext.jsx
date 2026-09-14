@@ -1,25 +1,14 @@
-import { useState, useEffect } from "react";
-import { UserContext } from "./authContext";
+import { createContext, useState } from "react";
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const UserContext = createContext(null);
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
-  const loading = false; // direct boolean to satisfy linter
-
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/me`, { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && data.user) {
-          setUser(data.user);
-        }
-      })
-      .catch(() => {});
-  }, [API_URL]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   return (
-    <UserContext.Provider value={{ user, setUser, loading, API_URL }}>
+    <UserContext.Provider value={{ user, setUser, isLoggedIn, setIsLoggedIn }}>
       {children}
     </UserContext.Provider>
   );

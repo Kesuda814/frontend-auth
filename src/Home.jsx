@@ -1,21 +1,19 @@
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { AppBar, Button, Toolbar, Typography, Box } from "@mui/material";
 import { Outlet, useNavigate } from "react-router-dom";
-import { useUser } from "./context/UserContext";
+import { UserContext } from "./context/UserContext";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Home() {
   const navigate = useNavigate();
-  const { user, isLoggedIn, isInitializing } = useUser();
+  const { isLoggedIn } = useContext(UserContext);
 
   useEffect(() => {
-    if (!isLoggedIn && !isInitializing) {
+    if (!isLoggedIn) {
       navigate("/login");
     }
-  }, [isLoggedIn, isInitializing, navigate]);
-
-  if (isInitializing) return null;
+  }, [isLoggedIn, navigate]);
 
   return (
     <div>
@@ -24,27 +22,14 @@ export default function Home() {
           <Typography variant="h5" sx={{ flexGrow: 1 }}>
             My Frontend 1.0
           </Typography>
-          <Button
-            color="inherit"
-            onClick={() => {
-              navigate("/item");
-            }}
-          >
+          <Button color="inherit" onClick={() => navigate("/item")}>
             Item
           </Button>
-          
-          {/* Only Admin user can see User menu */}
-          {user && user._id == -1 && (
-            <Button
-              color="inherit"
-              onClick={() => {
-                navigate("/user");
-              }}
-            >
+          {isLoggedIn && (
+            <Button color="inherit" onClick={() => navigate("/user")}>
               User
             </Button>
           )}
-
           <Button
             color="inherit"
             onClick={async () => {
@@ -52,7 +37,7 @@ export default function Home() {
                 credentials: "include",
               });
               if (result.ok) {
-                window.location.reload(true);
+                window.location.reload();
               }
             }}
           >
@@ -60,7 +45,7 @@ export default function Home() {
           </Button>
         </Toolbar>
       </AppBar>
-      <Box sx={{ px: 2, pt: 2 }}>
+      <Box sx={{ px: 2, py: 2 }}>
         <Outlet />
       </Box>
     </div>
