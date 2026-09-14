@@ -1,17 +1,21 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { UserProvider } from "./context/UserContext";
 import Home from "./Home";
-import LoginPage from "./Login";
-import UserManagement from "./UserManagement"; // We will create this file
+import Login from "./Login";
+import UserManagement from "./UserManagement";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/users" element={<UserManagement />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+    <UserProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Home />}>
+            <Route path="user" element={<UserManagement />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </BrowserRouter>
+    </UserProvider>
   );
 }
