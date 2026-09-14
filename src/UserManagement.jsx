@@ -21,7 +21,7 @@ export default function UserManagement() {
       } else {
         setMessage(data.message || 'Failed to change password.');
       }
-    } catch (err) {
+    } catch  {
       setMessage('An error occurred connecting to the server.');
     }
   };
