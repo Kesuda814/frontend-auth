@@ -1,71 +1,170 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  Button,
+  Container,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+  TextField,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Alert,
+} from "@mui/material";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function UserManagement() {
-  const [password, setPassword] = useState("");
-  const [targetUserId, setTargetUserId] = useState("");
-  const [message, setMessage] = useState("");
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [openDialog, setOpenDialog] = useState(false);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
+  // Fetch users list on mount (defined inside to satisfy strict React hooks lint rules)
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const res = await fetch(`${API_URL}/api/user`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setUsers(data.users || []);
+        } else {
+          setMessage({ type: "error", text: data.message || "Failed to fetch users" });
+        }
+      } catch {
+        setMessage({ type: "error", text: "Network error while fetching users" });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUsers();
+  }, []);
+
+  const handleOpenPasswordDialog = (user) => {
+    setSelectedUser(user);
+    setNewPassword("");
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedUser(null);
+  };
+
+  const handlePasswordChange = async () => {
+    if (!newPassword) {
+      setMessage({ type: "error", text: "Password cannot be empty" });
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_URL}/api/user/password`, {
+      const res = await fetch(`${API_URL}/api/user/password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
         body: JSON.stringify({
-          password: password,
-          targetUserId: targetUserId ? Number(targetUserId) : undefined,
+          userId: selectedUser._id,
+          newPassword: newPassword,
         }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (response.ok) {
-        setMessage("Password changed successfully!");
-        setPassword("");
-        setTargetUserId("");
+      if (res.ok) {
+        setMessage({ type: "success", text: "Password updated successfully!" });
+        handleCloseDialog();
       } else {
-        setMessage(data.message || "Failed to change password.");
+        setMessage({ type: "error", text: data.message || "Failed to update password" });
       }
-    } catch (error) {
-      console.error("Error:", error);
-      setMessage("An error occurred connecting to the server.");
+    } catch {
+      setMessage({ type: "error", text: "Network error during password update" });
     }
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "400px", margin: "0 auto" }}>
-      <h2>User Management</h2>
-      <h3>Change Password</h3>
-      <form onSubmit={handlePasswordChange}>
-        <div style={{ marginBottom: "10px" }}>
-          <label style={{ display: "block", marginBottom: "5px" }}>Target User ID (Leave blank for yourself):</label>
-          <input
-            type="number"
-            value={targetUserId}
-            onChange={(e) => setTargetUserId(e.target.value)}
-            style={{ width: "100%", padding: "8px" }}
-          />
-        </div>
-        <div style={{ marginBottom: "10px" }}>
-          <label style={{ display: "block", marginBottom: "5px" }}>New Password:</label>
-          <input
+    <Container maxWidth="md" sx={{ mt: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        User Management
+      </Typography>
+
+      {message.text && (
+        <Alert severity={message.type} sx={{ mb: 2 }}>
+          {message.text}
+        </Alert>
+      )}
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell><strong>Username</strong></TableCell>
+              <TableCell><strong>Email</strong></TableCell>
+              <TableCell align="right"><strong>Actions</strong></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user._id}>
+                <TableCell>{user.username}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell align="right">
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    onClick={() => handleOpenPasswordDialog(user)}
+                  >
+                    Change Password
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {!loading && users.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={3} align="center">
+                  No users found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Password Change Dialog */}
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Change Password for {selectedUser?.username}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="New Password"
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: "100%", padding: "8px" }}
+            fullWidth
+            variant="outlined"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
           />
-        </div>
-        <button type="submit" style={{ padding: "10px 15px", width: "100%" }}>
-          Update Password
-        </button>
-      </form>
-      {message && <p style={{ marginTop: "15px", color: "blue" }}>{message}</p>}
-    </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button onClick={handlePasswordChange} variant="contained">
+            Update Password
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Container>
   );
 }
