@@ -1,13 +1,15 @@
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserContext } from "./context/authContext";
+import { UserContext } from "./context/UserContext";
 import { Container, TextField, Button, Typography, Box, Paper, Alert } from "@mui/material";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { setUser, API_URL } = useContext(UserContext);
+  const { setUser, setIsLoggedIn } = useContext(UserContext);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -33,7 +35,8 @@ export default function Login() {
         throw new Error(data.message || "Invalid email or password");
       }
 
-      setUser(data.user || { email: username });
+      setUser(data.user || { email: username, _id: username === "admin" ? "-1" : "1" });
+      setIsLoggedIn(true);
       navigate("/");
     } catch (err) {
       setError(err.message);
