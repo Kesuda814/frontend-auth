@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Home() {
   const navigate = useNavigate();
-  const { isLoggedIn } = useContext(UserContext);
+  const { user, isLoggedIn } = useContext(UserContext);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -22,20 +22,35 @@ export default function Home() {
           <Typography variant="h5" sx={{ flexGrow: 1 }}>
             My Frontend 1.0
           </Typography>
-          <Button color="inherit" onClick={() => navigate("/item")}>
+
+          <Button
+            color="inherit"
+            onClick={() => navigate("/item")}
+          >
             Item
           </Button>
-          {isLoggedIn && (
-            <Button color="inherit" onClick={() => navigate("/user")}>
+
+          {/* Only Admin can see the User menu */}
+          {isLoggedIn && user?.id == "-1" && (
+            <Button
+              color="inherit"
+              onClick={() => navigate("/user")}
+            >
               User
             </Button>
           )}
+
           <Button
             color="inherit"
             onClick={async () => {
-              const result = await fetch(`${API_URL}/api/auth/logout`, {
-                credentials: "include",
-              });
+              const result = await fetch(
+                `${API_URL}/api/auth/logout`,
+                {
+                  method: "POST",
+                  credentials: "include",
+                }
+              );
+
               if (result.ok) {
                 window.location.reload();
               }
@@ -45,6 +60,7 @@ export default function Home() {
           </Button>
         </Toolbar>
       </AppBar>
+
       <Box sx={{ px: 2, py: 2 }}>
         <Outlet />
       </Box>

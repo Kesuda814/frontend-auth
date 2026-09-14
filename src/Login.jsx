@@ -1,7 +1,15 @@
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "./context/UserContext";
-import { Container, TextField, Button, Typography, Box, Paper, Alert } from "@mui/material";
+import {
+  Container,
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Paper,
+  Alert,
+} from "@mui/material";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -9,6 +17,7 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
   const { setUser, setIsLoggedIn } = useContext(UserContext);
   const navigate = useNavigate();
 
@@ -22,21 +31,46 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
+      // Login and let the backend create the JWT cookie
+      const loginRes = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: username, password }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: username,
+          password: password,
+        }),
         credentials: "include",
       });
 
-      const data = await res.json();
+      const loginData = await loginRes.json();
 
-      if (!res.ok) {
-        throw new Error(data.message || "Invalid email or password");
+      if (!loginRes.ok) {
+        throw new Error(
+          loginData.message || "Invalid email or password"
+        );
       }
 
-      setUser(data.user || { email: username, _id: username === "admin" ? "-1" : "1" });
+      // Get the actual logged-in user from the JWT
+      const meRes = await fetch(`${API_URL}/api/me`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const user = await meRes.json();
+
+      if (!meRes.ok) {
+        throw new Error(
+          user.message || "Could not get logged-in user"
+        );
+      }
+
+      // Save the actual user information
+      setUser(user);
       setIsLoggedIn(true);
+
+      // Go to Home
       navigate("/");
     } catch (err) {
       setError(err.message);
@@ -45,12 +79,43 @@ export default function Login() {
 
   return (
     <Container maxWidth="xs">
-      <Box sx={{ mt: 10, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <Paper elevation={3} sx={{ p: 4, width: "100%", borderRadius: 3, backgroundColor: "#ffffff", color: "#333" }}>
-          <Typography component="h1" variant="h4" align="center" gutterBottom sx={{ fontWeight: "bold", color: "#1976d2" }}>
+      <Box
+        sx={{
+          mt: 10,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            width: "100%",
+            borderRadius: 3,
+            backgroundColor: "#ffffff",
+            color: "#333",
+          }}
+        >
+          <Typography
+            component="h1"
+            variant="h4"
+            align="center"
+            gutterBottom
+            sx={{
+              fontWeight: "bold",
+              color: "#1976d2",
+            }}
+          >
             Welcome Back
           </Typography>
-          <Typography variant="body2" align="center" color="textSecondary" sx={{ mb: 3 }}>
+
+          <Typography
+            variant="body2"
+            align="center"
+            color="textSecondary"
+            sx={{ mb: 3 }}
+          >
             Please sign in to your dashboard
           </Typography>
 
@@ -60,7 +125,11 @@ export default function Login() {
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleLogin} sx={{ mt: 1 }}>
+          <Box
+            component="form"
+            onSubmit={handleLogin}
+            sx={{ mt: 1 }}
+          >
             <TextField
               margin="normal"
               required
@@ -76,6 +145,7 @@ export default function Login() {
                 input: { color: "#000" },
               }}
             />
+
             <TextField
               margin="normal"
               required
@@ -91,12 +161,19 @@ export default function Login() {
                 input: { color: "#000" },
               }}
             />
+
             <Button
               type="submit"
               fullWidth
               variant="contained"
               size="large"
-              sx={{ mt: 3, mb: 2, py: 1.5, fontWeight: "bold", borderRadius: 2 }}
+              sx={{
+                mt: 3,
+                mb: 2,
+                py: 1.5,
+                fontWeight: "bold",
+                borderRadius: 2,
+              }}
             >
               Sign In
             </Button>

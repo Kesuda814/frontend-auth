@@ -3,6 +3,7 @@ import { UserProvider } from "./context/UserContext";
 import Home from "./Home";
 import Login from "./Login";
 import UserManagement from "./UserManagement";
+import ItemManagement from "./ItemManagement";
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Home />}>
             <Route path="user" element={<UserManagement />} />
+            <Route path="item" element={<ItemManagement />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
